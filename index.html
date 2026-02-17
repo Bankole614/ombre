@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OMBRÉ — Haute Parfumerie</title>
+
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        obsidian:   '#080808',
+                        charcoal:   '#111111',
+                        gold:       '#b8955a',
+                        'gold-light': '#d4af7a',
+                        'gold-pale':  '#e8d5b0',
+                        ivory:      '#f5f0e8',
+                        ash:        '#9a9490',
+                    },
+                    fontFamily: {
+                        display: ['Cormorant Garamond', 'serif'],
+                        sc:      ['Cormorant SC', 'serif'],
+                        body:    ['Jost', 'sans-serif'],
+                    },
+                    letterSpacing: {
+                        widest2: '0.3em',
+                        widest3: '0.5em',
+                        widest4: '0.6em',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Cormorant+SC:wght@300;400;600&family=Jost:wght@100;200;300;400&display=swap" rel="stylesheet">
+
+    <!-- Three.js -->
+    <script src="https://unpkg.com/three@0.159.0/build/three.min.js"></script>
+
+    <!-- Vanilla CSS — only for things Tailwind cannot do -->
+    <style>
+        /* ── RESET & BASE ─────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            background: #080808;
+            color: #f5f0e8;
+            font-family: 'Jost', sans-serif;
+            font-weight: 200;
+            overflow-x: hidden;
+            cursor: none;
+        }
+
+        /* ── FILM GRAIN ───────────────────────────────── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: 9998;
+            pointer-events: none;
+            opacity: 0.04;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            background-size: 200px 200px;
+            animation: grainShift 0.4s steps(1) infinite;
+        }
+        @keyframes grainShift {
+            0%   { background-position: 0 0; }
+            25%  { background-position: 40px -20px; }
+            50%  { background-position: -30px 50px; }
+            75%  { background-position: 60px 30px; }
+            100% { background-position: 0 0; }
+        }
+
+        /* ── CROSSHAIR CURSOR ─────────────────────────── */
+        #cursor {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.3s;
+        }
+        #cursor .ch-h {
+            position: absolute;
+            top: 50%; left: 0;
+            width: 28px; height: 1px;
+            background: #d4af7a;
+            transform: translateY(-50%);
+            transform-origin: center;
+        }
+        #cursor .ch-h::before {
+            content: '';
+            position: absolute;
+            right: 100%;
+            top: 0;
+            width: 5px; height: 1px;
+            background: #d4af7a;
+            margin-right: 3px;
+        }
+        #cursor .ch-v {
+            position: absolute;
+            left: 50%; top: 0;
+            width: 1px; height: 28px;
+            background: #d4af7a;
+            transform: translateX(-50%);
+        }
+        #cursor .ch-v::before {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            width: 1px; height: 5px;
+            background: #d4af7a;
+            margin-bottom: 3px;
+        }
+        #cursor .ch-ring {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 10px; height: 10px;
+            border: 1px solid rgba(212,175,122,0.7);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+        /* Hover state — crosshair expands to circle */
+        #cursor.hovered .ch-h,
+        #cursor.hovered .ch-v { opacity: 0; }
+        #cursor.hovered .ch-ring {
+            width: 34px; height: 34px;
+            border-color: #b8955a;
+            transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
+        }
+        #cursor .ch-h,
+        #cursor .ch-v,
+        #cursor .ch-ring { transition: all 0.25s cubic-bezier(0.16,1,0.3,1); }
+
+        /* ── CANVAS ───────────────────────────────────── */
+        #spray-canvas {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* ── HERO ENTRY ANIMATIONS ────────────────────── */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(28px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+        .anim-1 { opacity:0; animation: fadeUp 1.4s cubic-bezier(0.16,1,0.3,1) 0.4s forwards; }
+        .anim-2 { opacity:0; animation: fadeUp 1.6s cubic-bezier(0.16,1,0.3,1) 0.7s forwards; }
+        .anim-3 { opacity:0; animation: fadeUp 1.4s cubic-bezier(0.16,1,0.3,1) 1.0s forwards; }
+        .anim-4 { opacity:0; animation: fadeUp 1.4s cubic-bezier(0.16,1,0.3,1) 1.2s forwards; }
+        .anim-5 { opacity:0; animation: fadeUp 1.4s cubic-bezier(0.16,1,0.3,1) 1.5s forwards; }
+        .anim-6 { opacity:0; animation: fadeIn 1.0s ease          2.2s forwards; }
+
+        /* ── VERTICAL RULE ────────────────────────────── */
+        .v-rule {
+            width: 1px; height: 60px;
+            background: linear-gradient(180deg, transparent, #b8955a, transparent);
+            margin: 0 auto;
+        }
+
+        /* ── SCROLL BOUNCE ────────────────────────────── */
+        @keyframes scrollBounce {
+            0%,100% { opacity:.3; transform: scaleY(1); }
+            50%     { opacity:1;  transform: scaleY(1.2); }
+        }
+        .scroll-line {
+            width: 1px; height: 52px;
+            background: linear-gradient(180deg, #9a9490, transparent);
+            margin: 0.8rem auto 0;
+            animation: scrollBounce 2.5s ease-in-out infinite;
+        }
+
+        /* ── SCROLL REVEAL ────────────────────────────── */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 1.2s cubic-bezier(0.16,1,0.3,1),
+                        transform 1.2s cubic-bezier(0.16,1,0.3,1);
+        }
+        .reveal.visible { opacity:1; transform: translateY(0); }
+
+        /* ── FRAGRANCE CARD GRADIENTS ─────────────────── */
+        /* These are too complex for Tailwind arbitrary values — kept in CSS */
+        .frag-noir-bg {
+            background:
+                radial-gradient(ellipse at 30% 70%, rgba(80,40,20,.55) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 20%, rgba(30,15,5,.8)   0%, transparent 50%),
+                linear-gradient(160deg, #0d0805 0%, #1c1008 50%, #0a0705 100%);
+        }
+        .frag-blanc-bg {
+            background:
+                radial-gradient(ellipse at 60% 40%, rgba(220,210,190,.12) 0%, transparent 60%),
+                radial-gradient(ellipse at 20% 80%, rgba(185,170,150,.08) 0%, transparent 50%),
+                linear-gradient(160deg, #0f0f0d 0%, #18180e 50%, #0c0c0a 100%);
+        }
+        .frag-rouge-bg {
+            background:
+                radial-gradient(ellipse at 50% 60%, rgba(110,20,20,.5)  0%, transparent 60%),
+                radial-gradient(ellipse at 80% 30%, rgba(65,10,10,.72)  0%, transparent 50%),
+                linear-gradient(160deg, #0d0505 0%, #1a0808 50%, #0a0404 100%);
+        }
+
+        /* Hover mist overlay per card */
+        .card-mist {
+            position: absolute; inset: 0;
+            opacity: 0;
+            transition: opacity 1.2s ease;
+            pointer-events: none;
+        }
+        .frag-noir  .card-mist { background: radial-gradient(ellipse at 50% 105%, rgba(184,149,90,.28) 0%, transparent 65%); }
+        .frag-blanc .card-mist { background: radial-gradient(ellipse at 50% 105%, rgba(220,215,200,.18) 0%, transparent 65%); }
+        .frag-rouge .card-mist { background: radial-gradient(ellipse at 50% 105%, rgba(185,55,55,.22) 0%, transparent 65%); }
+        .frag-noir:hover  .card-mist,
+        .frag-blanc:hover .card-mist,
+        .frag-rouge:hover .card-mist { opacity: 1; }
+
+        /* Card inner image scale */
+        .card-inner { transition: transform 0.8s cubic-bezier(0.65,0,0.35,1); }
+        .fragrance-card:hover .card-inner { transform: scale(1.05); }
+
+        /* Notes text reveal */
+        .card-notes { opacity:0; transition: opacity 0.5s 0.1s; }
+        .fragrance-card:hover .card-notes { opacity:1; }
+
+        /* Card info lift */
+        .card-info { transform: translateY(24px); transition: transform 0.7s cubic-bezier(0.65,0,0.35,1); }
+        .fragrance-card:hover .card-info { transform: translateY(0); }
+
+        /* ── BESPOKE FRAME ────────────────────────────── */
+        .bespoke-frame {
+            position: absolute;
+            top: 1.8rem; left: 1.8rem; right: 1.8rem; bottom: 1.8rem;
+            border: 1px solid rgba(184,149,90,.25);
+            pointer-events: none;
+        }
+
+        /* ── WATERMARK ────────────────────────────────── */
+        .watermark {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Cormorant SC', serif;
+            font-size: clamp(8rem, 22vw, 20rem);
+            font-weight: 300;
+            color: rgba(184,149,90,.025);
+            white-space: nowrap;
+            pointer-events: none;
+            letter-spacing: 0.3em;
+            user-select: none;
+        }
+
+        /* ── NAV GRADIENT ─────────────────────────────── */
+        .nav-gradient {
+            background: linear-gradient(180deg, rgba(8,8,8,.92) 0%, transparent 100%);
+        }
+
+        /* ── PROCESS BORDER ───────────────────────────── */
+        .process-step { border-top: 1px solid rgba(184,149,90,.2); }
+
+        /* ── FOOTER BORDER ────────────────────────────── */
+        .footer-top-border { border-top: 1px solid rgba(184,149,90,.15); }
+        .footer-inner-border { border-top: 1px solid rgba(184,149,90,.1); }
+
+        /* ── QUOTE BORDER ─────────────────────────────── */
+        .quote-border { border-left: 1px solid #b8955a; }
+
+        /* ── CTA BUTTON ───────────────────────────────── */
+        .btn-ivory {
+            border: 1px solid rgba(245,240,232,.25);
+            transition: border-color .6s, color .6s, background .6s;
+        }
+        .btn-ivory:hover {
+            border-color: #b8955a;
+            color: #d4af7a;
+            background: rgba(184,149,90,.05);
+        }
+        .btn-gold {
+            border: 1px solid rgba(184,149,90,.4);
+            transition: background .5s, color .5s, border-color .5s;
+        }
+        .btn-gold:hover {
+            background: #b8955a;
+            color: #080808;
+            border-color: #b8955a;
+        }
+
+        /* ── NAV LINK UNDERLINE ───────────────────────── */
+        .nav-link {
+            position: relative;
+            transition: color 0.5s;
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -4px; left: 0;
+            width: 0; height: 1px;
+            background: #d4af7a;
+            transition: width 0.4s;
+        }
+        .nav-link:hover { color: #d4af7a; }
+        .nav-link:hover::after { width: 100%; }
+
+        /* ── BESPOKE LIST ─────────────────────────────── */
+        .bespoke-li {
+            border-bottom: 1px solid rgba(245,240,232,.08);
+        }
+
+        /* ── STATEMENT NUMBER ─────────────────────────── */
+        .statement-num {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(6rem, 12vw, 10rem);
+            font-weight: 300;
+            color: rgba(184,149,90,.07);
+            line-height: 1;
+            user-select: none;
+        }
+
+        /* Responsive hide */
+        @media (max-width:768px) {
+            .nav-links-wrap { display:none; }
+            .collections-grid { grid-template-columns: 1fr !important; }
+            .process-grid { grid-template-columns: 1fr !important; }
+            .bespoke-grid { grid-template-columns: 1fr !important; }
+            .footer-cols { grid-template-columns: 1fr 1fr !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ── CROSSHAIR CURSOR ── -->
+    <div id="cursor">
+        <div class="ch-h"></div>
+        <div class="ch-v"></div>
+        <div class="ch-ring"></div>
+    </div>
+
+    <!-- ── SPRAY CANVAS ── -->
+    <canvas id="spray-canvas"></canvas>
+
+    <!-- ── NAV — sits above everything at z-[200] ── -->
+    <nav id="main-nav" class="fixed top-0 left-0 right-0 flex justify-between items-center px-16 py-6 transition-all duration-500 max-md:px-6"
+         style="z-index:200; background:rgba(8,8,8,0.82); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-bottom:1px solid rgba(184,149,90,0.1);">
+        <a href="#" class="font-sc text-gold-light text-xl tracking-widest3 no-underline shrink-0">ØMBRÉ</a>
+        <ul class="hidden md:flex gap-14 list-none">
+            <li><a href="#collections" class="nav-link font-body font-thin text-ash text-xs tracking-widest2 uppercase no-underline">Collections</a></li>
+            <li><a href="#philosophy"  class="nav-link font-body font-thin text-ash text-xs tracking-widest2 uppercase no-underline">Maison</a></li>
+            <li><a href="#bespoke"     class="nav-link font-body font-thin text-ash text-xs tracking-widest2 uppercase no-underline">Bespoke</a></li>
+            <li><a href="#contact"     class="nav-link font-body font-thin text-ash text-xs tracking-widest2 uppercase no-underline">Contact</a></li>
+        </ul>
+        <a href="#bespoke" class="hidden md:inline-block font-body font-thin text-gold text-xs tracking-widest2 uppercase no-underline pb-0.5 shrink-0"
+           style="border-bottom:1px solid rgba(184,149,90,.35); transition:color .4s, border-color .4s;"
+           onmouseover="this.style.color='#d4af7a';this.style.borderColor='#d4af7a'"
+           onmouseout="this.style.color='#b8955a';this.style.borderColor='rgba(184,149,90,.35)'">
+            Reserve a Consultation
+        </a>
+        <!-- Hamburger -->
+        <button id="nav-toggle" class="md:hidden flex flex-col gap-[5px] p-1 cursor-none" aria-label="Open menu">
+            <span class="block w-6 h-px bg-gold-light transition-all duration-300 origin-center" id="ham1"></span>
+            <span class="block w-6 h-px bg-gold-light transition-all duration-300" id="ham2"></span>
+            <span class="block w-4 h-px bg-gold-light transition-all duration-300 origin-center" id="ham3"></span>
+        </button>
+    </nav>
+
+    <!-- Mobile drawer -->
+    <div id="mobile-menu" class="fixed inset-0 flex flex-col justify-center items-center gap-10 pointer-events-none opacity-0 transition-all duration-500"
+         style="z-index:190; background:rgba(8,8,8,0.97); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);">
+        <a href="#collections" class="mobile-link font-display font-light text-ivory text-5xl no-underline hover:text-gold-light transition-colors duration-300">Collections</a>
+        <a href="#philosophy"  class="mobile-link font-display font-light text-ivory text-5xl no-underline hover:text-gold-light transition-colors duration-300">Maison</a>
+        <a href="#bespoke"     class="mobile-link font-display font-light text-ivory text-5xl no-underline hover:text-gold-light transition-colors duration-300">Bespoke</a>
+        <a href="#contact"     class="mobile-link font-display font-light text-ivory text-5xl no-underline hover:text-gold-light transition-colors duration-300">Contact</a>
+        <a href="#bespoke"     class="mobile-link font-body font-thin text-gold text-xs tracking-widest3 uppercase no-underline mt-4 pb-1"
+           style="border-bottom:1px solid rgba(184,149,90,.4);">Reserve a Consultation</a>
+    </div>
+
+    <!-- ── SITE ── -->
+    <div class="relative z-10">
+
+        <!-- HERO -->
+        <section class="min-h-screen grid place-items-center text-center px-8 pt-32 pb-16 relative">
+            <div class="max-w-4xl">
+                <p class="anim-1 font-body font-thin text-gold text-xs tracking-widest4 uppercase mb-12">
+                    Paris · Est. 1987 · Haute Parfumerie
+                </p>
+                <h1 class="anim-2 font-display font-light leading-none tracking-tight mb-10"
+                    style="font-size:clamp(5rem,13vw,11rem); letter-spacing:-0.02em;">
+                    The Art of<br>
+                    <em class="text-gold-pale not-italic" style="font-style:italic;">Invisible Silk</em>
+                </h1>
+                <div class="anim-3 v-rule mb-10"></div>
+                <p class="anim-4 font-display font-light italic text-ivory/80 text-xl leading-relaxed max-w-md mx-auto mb-16"
+                   style="letter-spacing:0.04em;">
+                    Fragrances composed for those who understand that true luxury
+                    is felt, never announced.
+                </p>
+                <a href="#collections" class="anim-5 btn-ivory font-body font-thin text-ivory text-xs tracking-widest3 uppercase no-underline px-14 py-5 inline-block cursor-pointer">
+                    Discover the Collections
+                </a>
+            </div>
+            <!-- Scroll indicator -->
+            <div class="anim-6 absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center">
+                <span class="font-body font-thin text-ash/60 text-[0.6rem] tracking-widest3 uppercase">Descend</span>
+                <div class="scroll-line"></div>
+            </div>
+        </section>
+
+        <!-- STATEMENT -->
+        <section class="reveal max-w-7xl mx-auto px-16 py-40 grid grid-cols-[auto_1fr] gap-24 items-start max-md:grid-cols-1 max-md:gap-10 max-md:px-6">
+            <div class="statement-num">I</div>
+            <div>
+                <h2 class="font-display font-light text-ivory leading-snug mb-8"
+                    style="font-size:clamp(2.6rem,5vw,4.2rem);">
+                    Scent is memory.<br>
+                    <em class="text-gold-pale">Memory is identity.</em>
+                </h2>
+                <div class="w-10 h-px bg-gold mb-8"></div>
+                <p class="font-body font-thin text-ivory/75 text-sm leading-loose max-w-xl tracking-wide">
+                    At Ombré, we do not manufacture perfume. We compose olfactive
+                    narratives — each one a private language between wearer and world.
+                    Our master perfumers work in silence, guided by instinct and
+                    decades of disciplined craft. The result is something that cannot
+                    be marketed, only experienced.
+                </p>
+            </div>
+        </section>
+
+        <!-- COLLECTIONS -->
+        <section id="collections" class="pb-40">
+            <div class="reveal flex justify-between items-baseline px-16 mb-16 max-md:px-6">
+                <h2 class="font-sc font-light text-gold text-xs tracking-widest3 uppercase">Signature Collections</h2>
+                <span class="font-body font-thin text-ash/70 text-xs tracking-widest2">Three · 2026</span>
+            </div>
+
+            <!-- Cards -->
+            <div class="collections-grid grid gap-px" style="grid-template-columns:repeat(3,1fr);">
+
+                <!-- OBSCUR -->
+                <div class="fragrance-card frag-noir relative overflow-hidden cursor-none" style="aspect-ratio:3/4;">
+                    <div class="card-inner frag-noir-bg absolute inset-0"></div>
+                    <div class="card-mist"></div>
+                    <!-- fine grid lines -->
+                    <div class="absolute inset-0 pointer-events-none"
+                         style="background:repeating-linear-gradient(90deg,transparent,transparent 99px,rgba(255,255,255,.012) 100px);"></div>
+                    <div class="card-info absolute bottom-0 left-0 right-0 px-10 pb-12"
+                         style="background:linear-gradient(0deg,rgba(8,8,8,.97) 0%,transparent 100%);">
+                        <p class="font-body font-thin text-gold text-[0.6rem] tracking-widest3 uppercase mb-3">Nuit Profonde</p>
+                        <h3 class="font-display font-light text-ivory mb-3" style="font-size:2.6rem;">OBSCUR</h3>
+                        <p class="card-notes font-display italic text-ash text-sm mb-4">Oud · Vetiver · Black Amber · Smoke</p>
+                        <p class="font-body font-thin text-gold-pale text-xs tracking-widest2">€ 480 · 50ml</p>
+                    </div>
+                </div>
+
+                <!-- ÉTHER -->
+                <div class="fragrance-card frag-blanc relative overflow-hidden cursor-none" style="aspect-ratio:3/4;">
+                    <div class="card-inner frag-blanc-bg absolute inset-0"></div>
+                    <div class="card-mist"></div>
+                    <div class="absolute inset-0 pointer-events-none"
+                         style="background:repeating-linear-gradient(90deg,transparent,transparent 99px,rgba(255,255,255,.012) 100px);"></div>
+                    <div class="card-info absolute bottom-0 left-0 right-0 px-10 pb-12"
+                         style="background:linear-gradient(0deg,rgba(8,8,8,.97) 0%,transparent 100%);">
+                        <p class="font-body font-thin text-gold text-[0.6rem] tracking-widest3 uppercase mb-3">Lumière Blanche</p>
+                        <h3 class="font-display font-light text-ivory mb-3" style="font-size:2.6rem;">ÉTHER</h3>
+                        <p class="card-notes font-display italic text-ash text-sm mb-4">Iris · White Musk · Rice Powder · Aldehydes</p>
+                        <p class="font-body font-thin text-gold-pale text-xs tracking-widest2">€ 420 · 50ml</p>
+                    </div>
+                </div>
+
+                <!-- ARDEUR -->
+                <div class="fragrance-card frag-rouge relative overflow-hidden cursor-none" style="aspect-ratio:3/4;">
+                    <div class="card-inner frag-rouge-bg absolute inset-0"></div>
+                    <div class="card-mist"></div>
+                    <div class="absolute inset-0 pointer-events-none"
+                         style="background:repeating-linear-gradient(90deg,transparent,transparent 99px,rgba(255,255,255,.012) 100px);"></div>
+                    <div class="card-info absolute bottom-0 left-0 right-0 px-10 pb-12"
+                         style="background:linear-gradient(0deg,rgba(8,8,8,.97) 0%,transparent 100%);">
+                        <p class="font-body font-thin text-gold text-[0.6rem] tracking-widest3 uppercase mb-3">Sang Royal</p>
+                        <h3 class="font-display font-light text-ivory mb-3" style="font-size:2.6rem;">ARDEUR</h3>
+                        <p class="card-notes font-display italic text-ash text-sm mb-4">Rose Absolute · Saffron · Leather · Benzoin</p>
+                        <p class="font-body font-thin text-gold-pale text-xs tracking-widest2">€ 510 · 50ml</p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- PHILOSOPHY -->
+        <section id="philosophy" class="relative py-52 px-8 text-center overflow-hidden">
+            <div class="watermark">OMBRÉ</div>
+            <div class="reveal max-w-3xl mx-auto relative z-10">
+                <h2 class="font-display font-light text-ivory leading-snug mb-16"
+                    style="font-size:clamp(2.4rem,5vw,3.8rem);">
+                    Crafted in Grasse,<br>
+                    <em class="text-gold-pale">finished in silence.</em>
+                </h2>
+                <blockquote class="quote-border pl-8 text-left font-display italic font-light text-ivory/70 text-xl leading-loose mb-16">
+                    "A great perfume is architecture. It has foundations, walls,
+                    and a sky. The mistake most make is building only walls."
+                    <footer class="font-body font-thin text-gold text-xs tracking-widest2 uppercase mt-4 not-italic">
+                        — Jean-Marc Ombré, Founder
+                    </footer>
+                </blockquote>
+                <p class="font-body font-thin text-ivory/70 text-sm leading-loose tracking-wide">
+                    Every formula begins with a feeling, not an ingredient. Our
+                    noses spend months in pursuit of a single chord — that precise
+                    moment when chemistry becomes emotion. Nothing leaves the
+                    atelier until it has earned its name.
+                </p>
+            </div>
+        </section>
+
+        <!-- PROCESS -->
+        <section class="reveal max-w-7xl mx-auto px-16 pb-44 max-md:px-6">
+            <p class="font-sc font-light text-gold text-xs tracking-widest3 uppercase mb-20">The Atelier Process</p>
+            <div class="process-grid grid gap-14" style="grid-template-columns:repeat(4,1fr);">
+                <div class="process-step relative pt-10">
+                    <span class="absolute top-[-0.6rem] right-0 font-display text-gold text-xs tracking-widest2">I</span>
+                    <h3 class="font-display font-light text-ivory text-2xl mb-5">Raw Material Selection</h3>
+                    <p class="font-body font-thin text-ivory/65 text-sm leading-loose">
+                        Only the rarest naturals. Bulgarian rose harvested at dawn.
+                        Oud from 60-year trees. Each ingredient tasted, smelled, and
+                        argued over for months.
+                    </p>
+                </div>
+                <div class="process-step relative pt-10">
+                    <span class="absolute top-[-0.6rem] right-0 font-display text-gold text-xs tracking-widest2">II</span>
+                    <h3 class="font-display font-light text-ivory text-2xl mb-5">Olfactive Composition</h3>
+                    <p class="font-body font-thin text-ivory/65 text-sm leading-loose">
+                        Our master perfumer works alone, in silence, over 18 months.
+                        No brief. No deadline. Only the pursuit of something true.
+                    </p>
+                </div>
+                <div class="process-step relative pt-10">
+                    <span class="absolute top-[-0.6rem] right-0 font-display text-gold text-xs tracking-widest2">III</span>
+                    <h3 class="font-display font-light text-ivory text-2xl mb-5">Maceration & Rest</h3>
+                    <p class="font-body font-thin text-ivory/65 text-sm leading-loose">
+                        Each formula macerates for a minimum of six weeks.
+                        Time is the final ingredient. There are no shortcuts in this atelier.
+                    </p>
+                </div>
+                <div class="process-step relative pt-10">
+                    <span class="absolute top-[-0.6rem] right-0 font-display text-gold text-xs tracking-widest2">IV</span>
+                    <h3 class="font-display font-light text-ivory text-2xl mb-5">Hand Bottling</h3>
+                    <p class="font-body font-thin text-ivory/65 text-sm leading-loose">
+                        Filled by hand in our Paris studio. Each flacon inspected,
+                        sealed with black wax, and numbered by our craftspeople.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- BESPOKE -->
+        <section id="bespoke" class="bg-charcoal px-16 py-44 max-md:px-6">
+            <div class="bespoke-grid reveal grid gap-28 items-center max-w-7xl mx-auto" style="grid-template-columns:1fr 1fr;">
+                <!-- Visual -->
+                <div class="relative overflow-hidden" style="aspect-ratio:3/4;">
+                    <div class="absolute inset-0"
+                         style="background:radial-gradient(ellipse at 40% 60%, rgba(184,149,90,.12) 0%, transparent 60%),
+                                         radial-gradient(ellipse at 80% 20%, rgba(184,149,90,.06) 0%, transparent 40%),
+                                         linear-gradient(160deg, #131008 0%, #1a1508 100%);"></div>
+                    <div class="bespoke-frame"></div>
+                    <div class="absolute bottom-20 left-0 right-0 text-center font-display font-light"
+                         style="font-size:4rem; color:rgba(184,149,90,.13); letter-spacing:0.45em;">BESPOKE</div>
+                </div>
+                <!-- Text -->
+                <div>
+                    <h2 class="font-display font-light text-ivory leading-snug mb-8"
+                        style="font-size:clamp(2.8rem,5vw,4.4rem);">
+                        Your scent.<br>
+                        <em class="text-gold-pale">Yours alone.</em>
+                    </h2>
+                    <p class="font-body font-thin text-ivory/70 text-sm leading-loose mb-5">
+                        The Ombré Bespoke programme is reserved for a small number of
+                        clients each year. Over four private sessions in our Paris atelier,
+                        our founder will compose a fragrance that belongs to no one else on earth.
+                    </p>
+                    <p class="font-body font-thin text-ivory/70 text-sm leading-loose mb-10">
+                        It will never be replicated, never be sold. Only one bottle will exist.
+                    </p>
+                    <ul class="list-none mb-10">
+                        <li class="bespoke-li flex justify-between items-center font-body font-thin text-ivory text-xs tracking-widest2 uppercase py-5">
+                            Private Consultation in Paris <span class="text-gold">→</span>
+                        </li>
+                        <li class="bespoke-li flex justify-between items-center font-body font-thin text-ivory text-xs tracking-widest2 uppercase py-5">
+                            Four Composition Sessions <span class="text-gold">→</span>
+                        </li>
+                        <li class="bespoke-li flex justify-between items-center font-body font-thin text-ivory text-xs tracking-widest2 uppercase py-5">
+                            Single Exclusive Flacon <span class="text-gold">→</span>
+                        </li>
+                        <li class="bespoke-li flex justify-between items-center font-body font-thin text-ivory text-xs tracking-widest2 uppercase py-5">
+                            Certificate of Singularity <span class="text-gold">→</span>
+                        </li>
+                    </ul>
+                    <a href="#contact" class="btn-gold font-body font-thin text-gold text-xs tracking-widest3 uppercase no-underline px-14 py-5 inline-block">
+                        Request an Appointment
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- TESTIMONIAL -->
+        <section class="reveal py-44 px-8 text-center">
+            <blockquote class="font-display italic font-light text-ivory leading-relaxed max-w-4xl mx-auto mb-10"
+                        style="font-size:clamp(1.7rem,3.5vw,2.8rem);">
+                "I have worn Obscur every day for six years.
+                It is not a perfume. It is the second layer of my skin."
+            </blockquote>
+            <cite class="font-body font-thin text-gold text-xs tracking-widest3 uppercase not-italic">
+                — C. Delacroix, Paris
+            </cite>
+        </section>
+
+        <!-- FOOTER -->
+        <footer id="contact" class="footer-top-border px-16 pt-20 pb-10 max-md:px-6">
+            <div class="footer-cols grid gap-20 mb-20" style="grid-template-columns:2fr 1fr 1fr 1fr;">
+                <div>
+                    <span class="font-sc font-light text-gold-light block mb-6" style="font-size:1.6rem; letter-spacing:0.4em;">ØMBRÉ</span>
+                    <p class="font-body font-thin text-ivory/60 text-sm leading-loose max-w-xs">
+                        Haute Parfumerie since 1987. Composed in Grasse. Bottled in Paris.
+                        Worn everywhere that matters.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="font-body font-thin text-gold text-[0.62rem] tracking-widest3 uppercase mb-7">Collections</h4>
+                    <ul class="list-none space-y-3">
+                        <li><a href="#" class="font-body font-thin text-ivory/60 text-sm no-underline hover:text-gold-light transition-colors duration-300">Obscur</a></li>
+                        <li><a href="#" class="font-body font-thin text-ivory/60 text-sm no-underline hover:text-gold-light transition-colors duration-300">Éther</a></li>
+                        <li><a href="#" class="font-body font-thin text-ivory/60 text-sm no-underline hover:text-gold-light transition-colors duration-300">Ardeur</a></li>
+                        <li><a href="#" class="font-body font-thin text-ivory/60 text-sm no-underline hover:text-gold-light transition-colors duration-300">Archive</a></li>
+                        <li><a href="#" class="font-body font-thin text-ivory/60 text-sm no-underline hover:text-gold-light transition-colors duration-300">Bespoke</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-body font-thin text-gold text-[0.62rem] tracking-widest3 uppercase mb-7">Maison</h4>
+                    <ul class="list-none space-y-3">
+                        <li><a href="#" class="font-body font-thin text-ivory/60 text-sm no-underline hover:text-gold-light transition-colors duration-300">Our Story</a></li>
+                        <li><a href="#" class="font-body font-thin text-ivory/60 text-sm no-underline hover:text-gold-light transition-colors duration-300">The Atelier</a></li>
+                        <li><a href="#" class="font-body font-thin text-ivory/60 text-sm no-underline hover:text-gold-light transition-colors duration-300">Press</a></li>
+                        <li><a href="#" class="font-body font-thin text-ivory/60 text-sm no-underline hover:text-gold-light transition-colors duration-300">Stockists</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-body font-thin text-gold text-[0.62rem] tracking-widest3 uppercase mb-7">Contact</h4>
+                    <ul class="list-none space-y-3">
+                        <li><span class="font-body font-thin text-ivory/60 text-sm">24 Rue du Faubourg</span></li>
+                        <li><span class="font-body font-thin text-ivory/60 text-sm">Paris, 75008</span></li>
+                        <li><a href="mailto:contact@ombre.paris" class="font-body font-thin text-ivory/60 text-sm no-underline hover:text-gold-light transition-colors duration-300">contact@ombre.paris</a></li>
+                        <li><span class="font-body font-thin text-ivory/60 text-sm">+33 1 42 00 00 00</span></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-inner-border pt-8 flex justify-between items-center max-md:flex-col max-md:gap-4 max-md:text-center">
+                <p class="font-body font-thin text-ivory/35 text-[0.62rem] tracking-widest2 uppercase">© 2026 Maison Ombré. All rights reserved.</p>
+                <p class="font-body font-thin text-ivory/35 text-[0.62rem] tracking-widest2 uppercase">Privacy · Terms · Sustainability</p>
+            </div>
+        </footer>
+
+    </div><!-- /.site -->
+
+    <script>
+    // ═══════════════════════════════════════════════════════════
+    //  CROSSHAIR CURSOR
+    // ═══════════════════════════════════════════════════════════
+    const cursorEl = document.getElementById('cursor');
+    let mx = 0, my = 0, cx = 0, cy = 0;
+
+    document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+
+    ;(function moveCursor() {
+        cx += (mx - cx) * 0.16;
+        cy += (my - cy) * 0.16;
+        cursorEl.style.left = cx + 'px';
+        cursorEl.style.top  = cy + 'px';
+        requestAnimationFrame(moveCursor);
+    })();
+
+    document.querySelectorAll('a, button, .fragrance-card').forEach(el => {
+        el.addEventListener('mouseenter', () => cursorEl.classList.add('hovered'));
+        el.addEventListener('mouseleave', () => cursorEl.classList.remove('hovered'));
+    });
+
+    // ═══════════════════════════════════════════════════════════
+    //  THREE.JS — PERFUME SPRAY ANIMATION
+    //
+    //  Concept: A fine mist is sprayed from a single nozzle point
+    //  at the bottom-centre of the screen. Particles burst outward
+    //  in a realistic cone arc — fast initial velocity that decays,
+    //  slight upward drift from buoyancy, wide lateral spread —
+    //  then slowly expand, fade, and dissolve. The spray fires in
+    //  rhythmic pulses, like a real atomiser being pressed.
+    // ═══════════════════════════════════════════════════════════
+    const scene    = new THREE.Scene();
+    const W = innerWidth, H = innerHeight;
+    const camera   = new THREE.PerspectiveCamera(55, W / H, 0.1, 300);
+    camera.position.set(0, 0, 60);
+
+    const canvas   = document.getElementById('spray-canvas');
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setSize(W, H);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+
+    // ── Particle pool ─────────────────────────────────────────
+    const MAX   = 420;
+    const pPos  = new Float32Array(MAX * 3);
+    const pCol  = new Float32Array(MAX * 3);
+    const pSz   = new Float32Array(MAX);
+
+    // Per-particle state (not GPU — kept in JS)
+    const vx    = new Float32Array(MAX);
+    const vy    = new Float32Array(MAX);
+    const vz    = new Float32Array(MAX);
+    const life  = new Float32Array(MAX).fill(-1);  // -1 = dormant
+    const maxL  = new Float32Array(MAX);
+
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+    geo.setAttribute('color',    new THREE.BufferAttribute(pCol, 3));
+    geo.setAttribute('size',     new THREE.BufferAttribute(pSz,  1));
+
+    const mat = new THREE.PointsMaterial({
+        size:            1.4,
+        vertexColors:    true,
+        transparent:     true,
+        opacity:         1.0,
+        blending:        THREE.AdditiveBlending,
+        depthWrite:      false,
+        sizeAttenuation: true,
+    });
+
+    scene.add(new THREE.Points(geo, mat));
+
+    // Nozzle position — bottom-centre, slightly above base
+    const NOZZLE_X =  0;
+    const NOZZLE_Y = -26;
+    const NOZZLE_Z =  0;
+
+    // Spray colour palette — warm gold mist + cool silver shimmer
+    const sprayHues = [
+        [0.90, 0.80, 0.60],  // warm gold
+        [0.95, 0.90, 0.78],  // pale cream
+        [0.75, 0.65, 0.45],  // amber
+        [0.88, 0.88, 0.88],  // silver shimmer
+        [0.80, 0.72, 0.55],  // muted gold
+    ];
+
+    let nextSlot = 0;
+
+    function spawnBurst(count) {
+        for (let b = 0; b < count; b++) {
+            const i = nextSlot % MAX;
+            nextSlot++;
+
+            const i3 = i * 3;
+
+            // Spawn at nozzle
+            pPos[i3]     = NOZZLE_X + (Math.random() - 0.5) * 0.6;
+            pPos[i3 + 1] = NOZZLE_Y + (Math.random() - 0.5) * 0.4;
+            pPos[i3 + 2] = NOZZLE_Z + (Math.random() - 0.5) * 0.4;
+
+            // Cone velocity — very wide horizontal fan, upward bias
+            const coneAngle  = (Math.random() - 0.5) * 4.2;   // wide spread across full screen
+            const riseAngle  = 0.25 + Math.random() * 1.1;    // upward arc
+            const speed      = 0.28 + Math.random() * 0.40;   // faster so they reach edges
+
+            vx[i] = Math.sin(coneAngle) * Math.cos(riseAngle) * speed;
+            vy[i] = Math.sin(riseAngle) * speed;
+            vz[i] = (Math.random() - 0.5) * 0.12;
+
+            // Longer lifetime so they travel further
+            maxL[i] = 120 + Math.random() * 160;
+            life[i] = 0;
+
+            // Colour
+            const h = sprayHues[Math.floor(Math.random() * sprayHues.length)];
+            pCol[i3]     = h[0];
+            pCol[i3 + 1] = h[1];
+            pCol[i3 + 2] = h[2];
+
+            // Initial size
+            pSz[i] = 2.5 + Math.random() * 3.5;
+        }
+    }
+
+    // ── Subtle ambient stars (original) ──────────────────────
+    const STAR_COUNT = 220;
+    const starGeo    = new THREE.BufferGeometry();
+    const starPos    = new Float32Array(STAR_COUNT * 3);
+    const starCol    = new Float32Array(STAR_COUNT * 3);
+
+    for (let i = 0; i < STAR_COUNT; i++) {
+        const i3 = i * 3;
+        starPos[i3]     = (Math.random() - 0.5) * 160;
+        starPos[i3 + 1] = (Math.random() - 0.5) * 100;
+        starPos[i3 + 2] = (Math.random() - 0.5) * 20 - 10;
+        const b = 0.03 + Math.random() * 0.07;
+        starCol[i3] = b * 0.9; starCol[i3+1] = b * 0.85; starCol[i3+2] = b * 0.7;
+    }
+
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+    starGeo.setAttribute('color',    new THREE.BufferAttribute(starCol, 3));
+
+    const starMat = new THREE.PointsMaterial({
+        size: 0.35, vertexColors: true,
+        transparent: true, opacity: 1,
+        blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true
+    });
+
+    scene.add(new THREE.Points(starGeo, starMat));
+
+    // ── Pulse timer — mimics repeated sprays ─────────────────
+    // Fires in rhythmic bursts: 3 quick pulses then a pause
+    const pulsePattern = [0, 180, 360, 1800]; // ms offsets, then reset
+    let   pulseIndex   = 0;
+    let   lastPulse    = -pulsePattern[0] - 100;
+
+    function handlePulse(now) {
+        const gap = pulsePattern[pulseIndex];
+        if (now - lastPulse >= gap) {
+            if (pulseIndex < pulsePattern.length - 1) {
+                spawnBurst(22 + Math.floor(Math.random() * 12));
+                lastPulse  = now;
+                pulseIndex++;
+            } else {
+                // long pause then restart
+                if (now - lastPulse >= pulsePattern[pulsePattern.length - 1]) {
+                    pulseIndex = 0;
+                    lastPulse  = now;
+                }
+            }
+        }
+    }
+
+    // ── Mouse influence ───────────────────────────────────────
+    let mInflX = 0;
+    document.addEventListener('mousemove', e => {
+        mInflX = (e.clientX / innerWidth - 0.5) * 0.006;
+    });
+
+    // ── Scroll fade ───────────────────────────────────────────
+    let sprayOpacity = 1;
+
+    // ── Animation loop ────────────────────────────────────────
+    let frame = 0;
+
+    function tick() {
+        frame++;
+        handlePulse(frame * (1000 / 60)); // approximate ms
+
+        // Scroll fade
+        const sr = Math.min(scrollY / (innerHeight * 1.2), 1);
+        sprayOpacity += ((1 - sr) - sprayOpacity) * 0.05;
+        mat.opacity = Math.max(0, sprayOpacity);
+
+        const pa = geo.attributes;
+
+        for (let i = 0; i < MAX; i++) {
+            if (life[i] < 0) continue; // dormant
+
+            const i3 = i * 3;
+            const t  = life[i] / maxL[i]; // 0 → 1 normalised lifetime
+
+            // Velocity decay — air resistance
+            vx[i] *= 0.97;
+            vy[i] *= 0.97;
+            vz[i] *= 0.97;
+
+            // Buoyancy — mist rises slowly
+            vy[i] += 0.0015;
+
+            // Mouse nudge
+            vx[i] += mInflX;
+
+            // Move
+            pa.position.array[i3]     += vx[i];
+            pa.position.array[i3 + 1] += vy[i];
+            pa.position.array[i3 + 2] += vz[i];
+
+            // Opacity envelope — sharp in, long graceful fade
+            // Peaks at t=0.08 then fades slowly
+            let alpha;
+            if (t < 0.08) {
+                alpha = t / 0.08;
+            } else {
+                alpha = 1 - ((t - 0.08) / 0.92);
+            }
+            alpha = Math.max(0, Math.pow(alpha, 1.4));
+
+            const h = sprayHues[i % sprayHues.length];
+            pa.color.array[i3]     = h[0] * alpha;
+            pa.color.array[i3 + 1] = h[1] * alpha;
+            pa.color.array[i3 + 2] = h[2] * alpha;
+
+            // Size — blooms as particle expands in air
+            pa.size.array[i] = pSz[i] * (1 + t * 4.5) * alpha;
+
+            life[i]++;
+            if (life[i] >= maxL[i]) {
+                life[i] = -1;
+                // park off-screen
+                pa.position.array[i3]     = 9999;
+                pa.position.array[i3 + 1] = 9999;
+                pa.position.array[i3 + 2] = 9999;
+            }
+        }
+
+        pa.position.needsUpdate = true;
+        pa.color.needsUpdate    = true;
+        pa.size.needsUpdate     = true;
+
+        // Gentle camera breathe
+        camera.position.y = Math.sin(frame * 0.008) * 0.4;
+
+        renderer.render(scene, camera);
+        requestAnimationFrame(tick);
+    }
+
+    tick();
+
+    // ── Resize ────────────────────────────────────────────────
+    window.addEventListener('resize', () => {
+        camera.aspect = innerWidth / innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(innerWidth, innerHeight);
+    });
+
+    // ═══════════════════════════════════════════════════════════
+    //  SCROLL REVEAL
+    // ═══════════════════════════════════════════════════════════
+    const io = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+            if (e.isIntersecting) {
+                e.target.classList.add('visible');
+                io.unobserve(e.target);
+            }
+        });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+    // ═══════════════════════════════════════════════════════════
+    //  HAMBURGER MENU
+    // ═══════════════════════════════════════════════════════════
+    const navToggle  = document.getElementById('nav-toggle');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const ham1 = document.getElementById('ham1');
+    const ham2 = document.getElementById('ham2');
+    const ham3 = document.getElementById('ham3');
+    let menuOpen = false;
+
+    navToggle.addEventListener('click', () => {
+        menuOpen = !menuOpen;
+        if (menuOpen) {
+            mobileMenu.style.opacity       = '1';
+            mobileMenu.style.pointerEvents = 'all';
+            ham1.style.transform = 'translateY(6px) rotate(45deg)';
+            ham2.style.opacity   = '0';
+            ham3.style.transform = 'translateY(-6px) rotate(-45deg)';
+            ham3.style.width     = '24px';
+        } else {
+            mobileMenu.style.opacity       = '0';
+            mobileMenu.style.pointerEvents = 'none';
+            ham1.style.transform = 'none';
+            ham2.style.opacity   = '1';
+            ham3.style.transform = 'none';
+            ham3.style.width     = '16px';
+        }
+    });
+
+    document.querySelectorAll('.mobile-link').forEach(el => {
+        el.addEventListener('click', () => {
+            menuOpen = false;
+            mobileMenu.style.opacity       = '0';
+            mobileMenu.style.pointerEvents = 'none';
+            ham1.style.transform = 'none';
+            ham2.style.opacity   = '1';
+            ham3.style.transform = 'none';
+            ham3.style.width     = '16px';
+        });
+    });
+
+    </script>
+</body>
+</html>
