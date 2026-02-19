@@ -487,7 +487,7 @@
                 <!-- ARDEUR -->
                 <div class="fragrance-card frag-rouge relative overflow-hidden cursor-none" style="aspect-ratio:3/4;">
                     <div class="card-inner frag-rouge-bg absolute inset-0"
-                        style="background-image: url('/9.jpeg'); 
+                        style="background-image: url('/15.jpeg'); 
                                 background-size: cover; 
                                 background-position: center;">
                     </div>
@@ -572,53 +572,100 @@
         </section>
 
         <!-- BESPOKE -->
-        <section id="bespoke" class="bg-charcoal px-16 py-44 max-md:px-6">
-            <div class="bespoke-grid reveal grid gap-28 items-center max-w-7xl mx-auto" style="grid-template-columns:1fr 1fr;">
-                <!-- Visual -->
-                <div class="relative overflow-hidden" style="aspect-ratio:3/4;">
-                    <div class="absolute inset-0"
-                         style="background:radial-gradient(ellipse at 40% 60%, rgba(184,149,90,.12) 0%, transparent 60%),
-                                         radial-gradient(ellipse at 80% 20%, rgba(184,149,90,.06) 0%, transparent 40%),
-                                         linear-gradient(160deg, #131008 0%, #1a1508 100%);"></div>
-                    <div class="bespoke-frame"></div>
-                    <div class="absolute bottom-20 left-0 right-0 text-center font-display font-light"
-                         style="font-size:4rem; color:rgba(184,149,90,.13); letter-spacing:0.45em;">BESPOKE</div>
+<section id="bespoke" class="bg-charcoal px-16 py-44 max-md:px-6">
+    <div class="bespoke-grid reveal grid gap-28 items-center max-w-7xl mx-auto" style="grid-template-columns:1fr 1fr;">
+        <!-- Visual with Image & Hover Effects -->
+        <div class="fragrance-card relative overflow-hidden cursor-none" style="aspect-ratio:3/4;">
+            <div class="card-inner absolute inset-0"
+                 style="background-image: url('/13.jpeg'); 
+                        background-size: cover; 
+                        background-position: center;">
+            </div>
+            <div class="card-mist" style="background: radial-gradient(ellipse at 50% 105%, rgba(184,149,90,.28) 0%, transparent 65%);"></div>
+            <!-- fine grid lines -->
+            <div class="absolute inset-0 pointer-events-none"
+                 style="background:repeating-linear-gradient(90deg,transparent,transparent 99px,rgba(255,255,255,.012) 100px);"></div>
+            <div class="bespoke-frame"></div>
+            <div class="absolute bottom-20 left-0 right-0 text-center font-display font-light z-10"
+                 style="font-size:4rem; color:rgba(184,149,90,.25); letter-spacing:0.45em; text-shadow: 0 0 20px rgba(0,0,0,0.5);">BESPOKE</div>
+        </div>
+        <!-- Text -->
+        <div>
+            <h2 class="font-display font-light text-ivory leading-snug mb-8"
+                style="font-size:clamp(2.8rem,5vw,4.4rem);">
+                Your scent.<br>
+                <em class="text-gold-pale">Yours alone.</em>
+            </h2>
+            <p class="font-body font-thin text-ivory/70 text-sm leading-loose mb-5">
+                The Ombré Bespoke programme is reserved for a small number of
+                clients each year. Over four private sessions in our Paris atelier,
+                our founder will compose a fragrance that belongs to no one else on earth.
+            </p>
+            <p class="font-body font-thin text-ivory/70 text-sm leading-loose mb-10">
+                It will never be replicated, never be sold. Only one bottle will exist.
+            </p>
+            
+            <!-- Accordion -->
+            <div class="bespoke-accordion mb-10">
+                <!-- Item 1 -->
+                <div class="border-b border-white/10">
+                    <button class="accordion-btn w-full flex justify-between items-center py-5 text-left group">
+                        <span class="font-body font-thin text-ivory text-xs tracking-widest2 uppercase">Private Consultation in Paris</span>
+                        <span class="text-gold transform transition-transform duration-300 group-hover:rotate-90">→</span>
+                    </button>
+                    <div class="accordion-content max-h-0 overflow-hidden transition-all duration-500 ease-in-out">
+                        <div class="pb-6 text-ivory/60 text-sm leading-relaxed">
+                            An intimate one-on-one session in our historic Paris atelier. You'll meet with our master perfumer to discuss your memories, preferences, and the emotional journey you want your fragrance to capture.
+                        </div>
+                    </div>
                 </div>
-                <!-- Text -->
-                <div>
-                    <h2 class="font-display font-light text-ivory leading-snug mb-8"
-                        style="font-size:clamp(2.8rem,5vw,4.4rem);">
-                        Your scent.<br>
-                        <em class="text-gold-pale">Yours alone.</em>
-                    </h2>
-                    <p class="font-body font-thin text-ivory/70 text-sm leading-loose mb-5">
-                        The Ombré Bespoke programme is reserved for a small number of
-                        clients each year. Over four private sessions in our Paris atelier,
-                        our founder will compose a fragrance that belongs to no one else on earth.
-                    </p>
-                    <p class="font-body font-thin text-ivory/70 text-sm leading-loose mb-10">
-                        It will never be replicated, never be sold. Only one bottle will exist.
-                    </p>
-                    <ul class="list-none mb-10">
-                        <li class="bespoke-li flex justify-between items-center font-body font-thin text-ivory text-xs tracking-widest2 uppercase py-5">
-                            Private Consultation in Paris <span class="text-gold">→</span>
-                        </li>
-                        <li class="bespoke-li flex justify-between items-center font-body font-thin text-ivory text-xs tracking-widest2 uppercase py-5">
-                            Four Composition Sessions <span class="text-gold">→</span>
-                        </li>
-                        <li class="bespoke-li flex justify-between items-center font-body font-thin text-ivory text-xs tracking-widest2 uppercase py-5">
-                            Single Exclusive Flacon <span class="text-gold">→</span>
-                        </li>
-                        <li class="bespoke-li flex justify-between items-center font-body font-thin text-ivory text-xs tracking-widest2 uppercase py-5">
-                            Certificate of Singularity <span class="text-gold">→</span>
-                        </li>
-                    </ul>
-                    <a href="#contact" class="btn-gold font-body font-thin text-gold text-xs tracking-widest3 uppercase no-underline px-14 py-5 inline-block">
-                        Request an Appointment
-                    </a>
+                
+                <!-- Item 2 -->
+                <div class="border-b border-white/10">
+                    <button class="accordion-btn w-full flex justify-between items-center py-5 text-left group">
+                        <span class="font-body font-thin text-ivory text-xs tracking-widest2 uppercase">Four Composition Sessions</span>
+                        <span class="text-gold transform transition-transform duration-300 group-hover:rotate-90">→</span>
+                    </button>
+                    <div class="accordion-content max-h-0 overflow-hidden transition-all duration-500 ease-in-out">
+                        <div class="pb-6 text-ivory/60 text-sm leading-relaxed">
+                            Over four separate sessions spanning several months, you'll work side-by-side with our perfumer. Each meeting refines the composition—adjusting notes, balancing accords, and ensuring every nuance reflects your vision.
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Item 3 -->
+                <div class="border-b border-white/10">
+                    <button class="accordion-btn w-full flex justify-between items-center py-5 text-left group">
+                        <span class="font-body font-thin text-ivory text-xs tracking-widest2 uppercase">Single Exclusive Flacon</span>
+                        <span class="text-gold transform transition-transform duration-300 group-hover:rotate-90">→</span>
+                    </button>
+                    <div class="accordion-content max-h-0 overflow-hidden transition-all duration-500 ease-in-out">
+                        <div class="pb-6 text-ivory/60 text-sm leading-relaxed">
+                            Your final composition is hand-bottled in a single Baccarat crystal flacon, engraved with your name and the date. The formula is destroyed. No second bottle will ever exist.
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Item 4 -->
+                <div class="border-b border-white/10">
+                    <button class="accordion-btn w-full flex justify-between items-center py-5 text-left group">
+                        <span class="font-body font-thin text-ivory text-xs tracking-widest2 uppercase">Certificate of Singularity</span>
+                        <span class="text-gold transform transition-transform duration-300 group-hover:rotate-90">→</span>
+                    </button>
+                    <div class="accordion-content max-h-0 overflow-hidden transition-all duration-500 ease-in-out">
+                        <div class="pb-6 text-ivory/60 text-sm leading-relaxed">
+                            You receive a hand-lettered certificate detailing the composition's notes, the date of creation, and a wax seal confirming this fragrance exists nowhere else in the world.
+                        </div>
+                    </div>
                 </div>
             </div>
-        </section>
+            
+            <a href="#contact" class="btn-gold font-body font-thin text-gold text-xs tracking-widest3 uppercase no-underline px-14 py-5 inline-block">
+                Request an Appointment
+            </a>
+        </div>
+    </div>
+</section>
 
         <!-- TESTIMONIAL -->
         <section class="reveal py-44 px-8 text-center">
@@ -958,6 +1005,34 @@
     }, { threshold: 0.1 });
 
     document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+    document.querySelectorAll('.accordion-btn').forEach(button => {
+    button.addEventListener('click', () => {
+        const content = button.nextElementSibling;
+        const isOpen = content.style.maxHeight !== '0px' && content.style.maxHeight !== '';
+        
+        // Close all other accordions (optional - remove if you want multiple open)
+        document.querySelectorAll('.accordion-content').forEach(item => {
+            if (item !== content) {
+                item.style.maxHeight = '0';
+                const otherBtn = item.previousElementSibling;
+                const otherArrow = otherBtn.querySelector('span:last-child');
+                if (otherArrow) otherArrow.style.transform = 'rotate(0)';
+            }
+        });
+        
+        // Toggle current
+        if (!isOpen) {
+            content.style.maxHeight = content.scrollHeight + 'px';
+            const arrow = button.querySelector('span:last-child');
+            if (arrow) arrow.style.transform = 'rotate(90deg)';
+        } else {
+            content.style.maxHeight = '0';
+            const arrow = button.querySelector('span:last-child');
+            if (arrow) arrow.style.transform = 'rotate(0)';
+        }
+    });
+});
 
     // ═══════════════════════════════════════════════════════════
     //  HAMBURGER MENU
