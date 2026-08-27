@@ -55,7 +55,6 @@
             font-family: 'Jost', sans-serif;
             font-weight: 200;
             overflow-x: hidden;
-            cursor: none;
         }
 
         /* ── FILM GRAIN ───────────────────────────────── */
@@ -77,67 +76,6 @@
             75%  { background-position: 60px 30px; }
             100% { background-position: 0 0; }
         }
-
-        /* ── CROSSHAIR CURSOR ─────────────────────────── */
-        #cursor {
-            position: fixed;
-            pointer-events: none;
-            z-index: 9999;
-            transform: translate(-50%, -50%);
-            transition: opacity 0.3s;
-        }
-        #cursor .ch-h {
-            position: absolute;
-            top: 50%; left: 0;
-            width: 28px; height: 1px;
-            background: #d4af7a;
-            transform: translateY(-50%);
-            transform-origin: center;
-        }
-        #cursor .ch-h::before {
-            content: '';
-            position: absolute;
-            right: 100%;
-            top: 0;
-            width: 5px; height: 1px;
-            background: #d4af7a;
-            margin-right: 3px;
-        }
-        #cursor .ch-v {
-            position: absolute;
-            left: 50%; top: 0;
-            width: 1px; height: 28px;
-            background: #d4af7a;
-            transform: translateX(-50%);
-        }
-        #cursor .ch-v::before {
-            content: '';
-            position: absolute;
-            bottom: 100%;
-            left: 0;
-            width: 1px; height: 5px;
-            background: #d4af7a;
-            margin-bottom: 3px;
-        }
-        #cursor .ch-ring {
-            position: absolute;
-            top: 50%; left: 50%;
-            width: 10px; height: 10px;
-            border: 1px solid rgba(212,175,122,0.7);
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-        }
-        /* Hover state — crosshair expands to circle */
-        #cursor.hovered .ch-h,
-        #cursor.hovered .ch-v { opacity: 0; }
-        #cursor.hovered .ch-ring {
-            width: 34px; height: 34px;
-            border-color: #b8955a;
-            transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
-        }
-        #cursor .ch-h,
-        #cursor .ch-v,
-        #cursor .ch-ring { transition: all 0.25s cubic-bezier(0.16,1,0.3,1); }
 
         /* ── CANVAS ───────────────────────────────────── */
         #spray-canvas {
@@ -339,13 +277,6 @@
 </head>
 <body>
 
-    <!-- ── CROSSHAIR CURSOR ── -->
-    <div id="cursor">
-        <div class="ch-h"></div>
-        <div class="ch-v"></div>
-        <div class="ch-ring"></div>
-    </div>
-
     <!-- ── SPRAY CANVAS ── -->
     <canvas id="spray-canvas"></canvas>
 
@@ -366,7 +297,7 @@
             Reserve a Consultation
         </a>
         <!-- Hamburger -->
-        <button id="nav-toggle" class="md:hidden flex flex-col gap-[5px] p-1 cursor-none" aria-label="Open menu">
+        <button id="nav-toggle" class="md:hidden flex flex-col gap-[5px] p-1" aria-label="Open menu">
             <span class="block w-6 h-px bg-gold-light transition-all duration-300 origin-center" id="ham1"></span>
             <span class="block w-6 h-px bg-gold-light transition-all duration-300" id="ham2"></span>
             <span class="block w-4 h-px bg-gold-light transition-all duration-300 origin-center" id="ham3"></span>
@@ -421,7 +352,7 @@
                 <div class="w-10 h-px bg-gold mb-8"></div>
                 <p class="font-body font-thin text-ivory/90 text-sm leading-loose max-w-xl tracking-wide">
                     At Ombré, we do not manufacture perfume. We compose olfactive
-                    narratives — each one a private language between wearer and world.
+                    narratives, each one a private language between wearer and world.
                     Our master perfumers work in silence, guided by instinct and
                     decades of disciplined craft. The result is something that cannot
                     be marketed, only experienced.
@@ -440,7 +371,7 @@
             <div class="collections-grid grid gap-px" style="grid-template-columns:repeat(3,1fr);">
 
                 <!-- OBSCUR -->
-                <div class="fragrance-card frag-noir relative overflow-hidden cursor-none" style="aspect-ratio:3/4;">
+                <div id="obscur" class="fragrance-card frag-noir relative overflow-hidden" style="aspect-ratio:3/4;">
                     <div class="card-inner frag-noir-bg absolute inset-0" 
                         style="background-image: url('/4.jpeg'); 
                                 background-size: cover; 
@@ -460,7 +391,7 @@
                 </div>
 
                 <!-- ÉTHER -->
-                <div class="fragrance-card frag-blanc relative overflow-hidden cursor-none" style="aspect-ratio:3/4;">
+                <div id="ether" class="fragrance-card frag-blanc relative overflow-hidden" style="aspect-ratio:3/4;">
                     <div class="card-inner frag-blanc-bg absolute inset-0"
                         style="background-image: url('/1.jpeg'); 
                                 background-size: cover; 
@@ -479,7 +410,7 @@
                 </div>
 
                 <!-- ARDEUR -->
-                <div class="fragrance-card frag-rouge relative overflow-hidden cursor-none" style="aspect-ratio:3/4;">
+                <div id="ardeur" class="fragrance-card frag-rouge relative overflow-hidden" style="aspect-ratio:3/4;">
                     <div class="card-inner frag-rouge-bg absolute inset-0"
                         style="background-image: url('/15.jpeg'); 
                                 background-size: cover; 
@@ -518,7 +449,7 @@
                 </blockquote>
                 <p class="font-body font-thin text-ivory/90 text-sm leading-loose tracking-wide">
                     Every formula begins with a feeling, not an ingredient. Our
-                    noses spend months in pursuit of a single chord — that precise
+                    noses spend months in pursuit of a single chord, that precise
                     moment when chemistry becomes emotion. Nothing leaves the
                     atelier until it has earned its name.
                 </p>
@@ -526,7 +457,7 @@
         </section>
 
         <!-- PROCESS -->
-        <section class="reveal max-w-7xl mx-auto px-16 pb-44 max-md:px-6">
+        <section id="atelier" class="reveal max-w-7xl mx-auto px-16 pb-44 max-md:px-6">
             <p class="font-sc font-light text-gold text-sm tracking-widest3 uppercase mb-20">The Atelier Process</p>
             <div class="process-grid grid gap-14" style="grid-template-columns:repeat(4,1fr);">
                 <div class="process-step relative pt-10">
@@ -569,7 +500,7 @@
 <section id="bespoke" class="bg-charcoal px-16 py-44 max-md:px-6">
     <div class="bespoke-grid reveal grid gap-28 items-center max-w-7xl mx-auto" style="grid-template-columns:1fr 1fr;">
         <!-- Visual with Image & Hover Effects -->
-        <div class="fragrance-card relative overflow-hidden cursor-none" style="aspect-ratio:3/4;">
+        <div class="fragrance-card relative overflow-hidden" style="aspect-ratio:3/4;">
             <div class="card-inner absolute inset-0"
                  style="background-image: url('/13.jpeg'); 
                         background-size: cover; 
@@ -662,7 +593,7 @@
 </section>
 
         <!-- TESTIMONIAL -->
-        <section class="reveal py-44 px-8 text-center">
+        <section id="press" class="reveal py-44 px-8 text-center">
             <blockquote class="font-display italic font-light text-ivory leading-relaxed max-w-4xl mx-auto mb-10"
                         style="font-size:clamp(1.7rem,3.5vw,2.8rem);">
                 "I have worn Obscur every day for six years.
@@ -686,20 +617,20 @@
                 <div>
                     <h4 class="font-body text-gold text-[0.62rem] tracking-widest3 uppercase mb-7">Collections</h4>
                     <ul class="list-none space-y-3">
-                        <li><a href="#" class="font-body font-thin text-ivory/80 text-sm no-underline hover:text-gold-light transition-colors duration-300">Obscur</a></li>
-                        <li><a href="#" class="font-body font-thin text-ivory/80 text-sm no-underline hover:text-gold-light transition-colors duration-300">Éther</a></li>
-                        <li><a href="#" class="font-body font-thin text-ivory/80 text-sm no-underline hover:text-gold-light transition-colors duration-300">Ardeur</a></li>
-                        <li><a href="#" class="font-body font-thin text-ivory/80 text-sm no-underline hover:text-gold-light transition-colors duration-300">Archive</a></li>
-                        <li><a href="#" class="font-body font-thin text-ivory/80 text-sm no-underline hover:text-gold-light transition-colors duration-300">Bespoke</a></li>
+                        <li><a href="#obscur" class="font-body font-thin text-ivory/80 text-sm no-underline hover:text-gold-light transition-colors duration-300">Obscur</a></li>
+                        <li><a href="#ether" class="font-body font-thin text-ivory/80 text-sm no-underline hover:text-gold-light transition-colors duration-300">Éther</a></li>
+                        <li><a href="#ardeur" class="font-body font-thin text-ivory/80 text-sm no-underline hover:text-gold-light transition-colors duration-300">Ardeur</a></li>
+                        <li><a href="#collections" class="font-body font-thin text-ivory/80 text-sm no-underline hover:text-gold-light transition-colors duration-300">Archive</a></li>
+                        <li><a href="#bespoke" class="font-body font-thin text-ivory/80 text-sm no-underline hover:text-gold-light transition-colors duration-300">Bespoke</a></li>
                     </ul>
                 </div>
                 <div>
                     <h4 class="font-body text-gold text-[0.62rem] tracking-widest3 uppercase mb-7">Maison</h4>
                     <ul class="list-none space-y-3">
-                        <li><a href="#" class="font-body font-thin text-ivory/80 text-sm no-underline hover:text-gold-light transition-colors duration-300">Our Story</a></li>
-                        <li><a href="#" class="font-body font-thin text-ivory/80 text-sm no-underline hover:text-gold-light transition-colors duration-300">The Atelier</a></li>
-                        <li><a href="#" class="font-body font-thin text-ivory/80 text-sm no-underline hover:text-gold-light transition-colors duration-300">Press</a></li>
-                        <li><a href="#" class="font-body font-thin text-ivory/80 text-sm no-underline hover:text-gold-light transition-colors duration-300">Stockists</a></li>
+                        <li><a href="#philosophy" class="font-body font-thin text-ivory/80 text-sm no-underline hover:text-gold-light transition-colors duration-300">Our Story</a></li>
+                        <li><a href="#atelier" class="font-body font-thin text-ivory/80 text-sm no-underline hover:text-gold-light transition-colors duration-300">The Atelier</a></li>
+                        <li><a href="#press" class="font-body font-thin text-ivory/80 text-sm no-underline hover:text-gold-light transition-colors duration-300">Press</a></li>
+                        <li><a href="#contact" class="font-body font-thin text-ivory/80 text-sm no-underline hover:text-gold-light transition-colors duration-300">Stockists</a></li>
                     </ul>
                 </div>
                 <div>
@@ -721,27 +652,6 @@
     </div><!-- /.site -->
 
     <script>
-    // ═══════════════════════════════════════════════════════════
-    //  CROSSHAIR CURSOR
-    // ═══════════════════════════════════════════════════════════
-    const cursorEl = document.getElementById('cursor');
-    let mx = 0, my = 0, cx = 0, cy = 0;
-
-    document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
-
-    ;(function moveCursor() {
-        cx += (mx - cx) * 0.16;
-        cy += (my - cy) * 0.16;
-        cursorEl.style.left = cx + 'px';
-        cursorEl.style.top  = cy + 'px';
-        requestAnimationFrame(moveCursor);
-    })();
-
-    document.querySelectorAll('a, button, .fragrance-card').forEach(el => {
-        el.addEventListener('mouseenter', () => cursorEl.classList.add('hovered'));
-        el.addEventListener('mouseleave', () => cursorEl.classList.remove('hovered'));
-    });
-
     // ═══════════════════════════════════════════════════════════
     //  THREE.JS — PERFUME SPRAY ANIMATION
     //
