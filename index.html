@@ -40,9 +40,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Cormorant+SC:wght@300;400;600&family=Jost:wght@100;200;300;400&display=swap" rel="stylesheet">
 
-    <!-- Three.js -->
-    <script src="https://unpkg.com/three@0.159.0/build/three.min.js"></script>
-
     <!-- Vanilla CSS — only for things Tailwind cannot do -->
     <style>
         /* ── RESET & BASE ─────────────────────────────── */
@@ -75,14 +72,6 @@
             50%  { background-position: -30px 50px; }
             75%  { background-position: 60px 30px; }
             100% { background-position: 0 0; }
-        }
-
-        /* ── CANVAS ───────────────────────────────────── */
-        #spray-canvas {
-            position: fixed;
-            inset: 0;
-            z-index: 0;
-            pointer-events: none;
         }
 
         /* ── HERO ENTRY ANIMATIONS ────────────────────── */
@@ -277,9 +266,6 @@
 </head>
 <body>
 
-    <!-- ── SPRAY CANVAS ── -->
-    <canvas id="spray-canvas"></canvas>
-
     <!-- ── NAV — sits above everything at z-[200] ── -->
     <nav id="main-nav" class="fixed top-0 left-0 right-0 flex justify-between items-center px-16 py-6 transition-all duration-500 max-md:px-6"
          style="z-index:200; background:rgba(8,8,8,0.82); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-bottom:1px solid rgba(184,149,90,0.1);">
@@ -319,7 +305,7 @@
     <div class="relative z-10">
 
         <!-- HERO -->
-        <section class="min-h-screen grid place-items-center text-center px-8 pt-32 pb-16 relative">
+        <section class="min-h-screen grid place-items-center text-center px-8 pt-32 relative">
             <div class="max-w-4xl">
                 <p class="anim-1 font-body text-gold text-xs tracking-widest4 uppercase mb-6">
                     Paris · Est. 1987 · Haute Parfumerie
@@ -652,250 +638,6 @@
     </div><!-- /.site -->
 
     <script>
-    // ═══════════════════════════════════════════════════════════
-    //  THREE.JS — PERFUME SPRAY ANIMATION
-    //
-    //  Concept: A fine mist is sprayed from a single nozzle point
-    //  at the bottom-centre of the screen. Particles burst outward
-    //  in a realistic cone arc — fast initial velocity that decays,
-    //  slight upward drift from buoyancy, wide lateral spread —
-    //  then slowly expand, fade, and dissolve. The spray fires in
-    //  rhythmic pulses, like a real atomiser being pressed.
-    // ═══════════════════════════════════════════════════════════
-    const scene    = new THREE.Scene();
-    const W = innerWidth, H = innerHeight;
-    const camera   = new THREE.PerspectiveCamera(55, W / H, 0.1, 300);
-    camera.position.set(0, 0, 60);
-
-    const canvas   = document.getElementById('spray-canvas');
-    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-    renderer.setSize(W, H);
-    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-
-    // ── Particle pool ─────────────────────────────────────────
-    const MAX   = 420;
-    const pPos  = new Float32Array(MAX * 3);
-    const pCol  = new Float32Array(MAX * 3);
-    const pSz   = new Float32Array(MAX);
-
-    // Per-particle state (not GPU — kept in JS)
-    const vx    = new Float32Array(MAX);
-    const vy    = new Float32Array(MAX);
-    const vz    = new Float32Array(MAX);
-    const life  = new Float32Array(MAX).fill(-1);  // -1 = dormant
-    const maxL  = new Float32Array(MAX);
-
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
-    geo.setAttribute('color',    new THREE.BufferAttribute(pCol, 3));
-    geo.setAttribute('size',     new THREE.BufferAttribute(pSz,  1));
-
-    const mat = new THREE.PointsMaterial({
-        size:            1.4,
-        vertexColors:    true,
-        transparent:     true,
-        opacity:         1.0,
-        blending:        THREE.AdditiveBlending,
-        depthWrite:      false,
-        sizeAttenuation: true,
-    });
-
-    scene.add(new THREE.Points(geo, mat));
-
-    // Nozzle position — bottom-centre, slightly above base
-    const NOZZLE_X =  0;
-    const NOZZLE_Y = -26;
-    const NOZZLE_Z =  0;
-
-    // Spray colour palette — warm gold mist + cool silver shimmer
-    const sprayHues = [
-        [0.90, 0.80, 0.60],  // warm gold
-        [0.95, 0.90, 0.78],  // pale cream
-        [0.75, 0.65, 0.45],  // amber
-        [0.88, 0.88, 0.88],  // silver shimmer
-        [0.80, 0.72, 0.55],  // muted gold
-    ];
-
-    let nextSlot = 0;
-
-    function spawnBurst(count) {
-        for (let b = 0; b < count; b++) {
-            const i = nextSlot % MAX;
-            nextSlot++;
-
-            const i3 = i * 3;
-
-            // Spawn at nozzle
-            pPos[i3]     = NOZZLE_X + (Math.random() - 0.5) * 0.6;
-            pPos[i3 + 1] = NOZZLE_Y + (Math.random() - 0.5) * 0.4;
-            pPos[i3 + 2] = NOZZLE_Z + (Math.random() - 0.5) * 0.4;
-
-            // Cone velocity — very wide horizontal fan, upward bias
-            const coneAngle  = (Math.random() - 0.5) * 4.2;   // wide spread across full screen
-            const riseAngle  = 0.25 + Math.random() * 1.1;    // upward arc
-            const speed      = 0.28 + Math.random() * 0.40;   // faster so they reach edges
-
-            vx[i] = Math.sin(coneAngle) * Math.cos(riseAngle) * speed;
-            vy[i] = Math.sin(riseAngle) * speed;
-            vz[i] = (Math.random() - 0.5) * 0.12;
-
-            // Longer lifetime so they travel further
-            maxL[i] = 120 + Math.random() * 160;
-            life[i] = 0;
-
-            // Colour
-            const h = sprayHues[Math.floor(Math.random() * sprayHues.length)];
-            pCol[i3]     = h[0];
-            pCol[i3 + 1] = h[1];
-            pCol[i3 + 2] = h[2];
-
-            // Initial size
-            pSz[i] = 2.5 + Math.random() * 3.5;
-        }
-    }
-
-    // ── Subtle ambient stars (original) ──────────────────────
-    const STAR_COUNT = 220;
-    const starGeo    = new THREE.BufferGeometry();
-    const starPos    = new Float32Array(STAR_COUNT * 3);
-    const starCol    = new Float32Array(STAR_COUNT * 3);
-
-    for (let i = 0; i < STAR_COUNT; i++) {
-        const i3 = i * 3;
-        starPos[i3]     = (Math.random() - 0.5) * 160;
-        starPos[i3 + 1] = (Math.random() - 0.5) * 100;
-        starPos[i3 + 2] = (Math.random() - 0.5) * 20 - 10;
-        const b = 0.03 + Math.random() * 0.07;
-        starCol[i3] = b * 0.9; starCol[i3+1] = b * 0.85; starCol[i3+2] = b * 0.7;
-    }
-
-    starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
-    starGeo.setAttribute('color',    new THREE.BufferAttribute(starCol, 3));
-
-    const starMat = new THREE.PointsMaterial({
-        size: 0.35, vertexColors: true,
-        transparent: true, opacity: 1,
-        blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true
-    });
-
-    scene.add(new THREE.Points(starGeo, starMat));
-
-    // ── Pulse timer — mimics repeated sprays ─────────────────
-    // Fires in rhythmic bursts: 3 quick pulses then a pause
-    const pulsePattern = [0, 180, 360, 1800]; // ms offsets, then reset
-    let   pulseIndex   = 0;
-    let   lastPulse    = -pulsePattern[0] - 100;
-
-    function handlePulse(now) {
-        const gap = pulsePattern[pulseIndex];
-        if (now - lastPulse >= gap) {
-            if (pulseIndex < pulsePattern.length - 1) {
-                spawnBurst(22 + Math.floor(Math.random() * 12));
-                lastPulse  = now;
-                pulseIndex++;
-            } else {
-                // long pause then restart
-                if (now - lastPulse >= pulsePattern[pulsePattern.length - 1]) {
-                    pulseIndex = 0;
-                    lastPulse  = now;
-                }
-            }
-        }
-    }
-
-    // ── Mouse influence ───────────────────────────────────────
-    let mInflX = 0;
-    document.addEventListener('mousemove', e => {
-        mInflX = (e.clientX / innerWidth - 0.5) * 0.006;
-    });
-
-    // ── Scroll fade ───────────────────────────────────────────
-    let sprayOpacity = 1;
-
-    // ── Animation loop ────────────────────────────────────────
-    let frame = 0;
-
-    function tick() {
-        frame++;
-        handlePulse(frame * (1000 / 60)); // approximate ms
-
-        // Scroll fade
-        const sr = Math.min(scrollY / (innerHeight * 1.2), 1);
-        sprayOpacity += ((1 - sr) - sprayOpacity) * 0.05;
-        mat.opacity = Math.max(0, sprayOpacity);
-
-        const pa = geo.attributes;
-
-        for (let i = 0; i < MAX; i++) {
-            if (life[i] < 0) continue; // dormant
-
-            const i3 = i * 3;
-            const t  = life[i] / maxL[i]; // 0 → 1 normalised lifetime
-
-            // Velocity decay — air resistance
-            vx[i] *= 0.97;
-            vy[i] *= 0.97;
-            vz[i] *= 0.97;
-
-            // Buoyancy — mist rises slowly
-            vy[i] += 0.0015;
-
-            // Mouse nudge
-            vx[i] += mInflX;
-
-            // Move
-            pa.position.array[i3]     += vx[i];
-            pa.position.array[i3 + 1] += vy[i];
-            pa.position.array[i3 + 2] += vz[i];
-
-            // Opacity envelope — sharp in, long graceful fade
-            // Peaks at t=0.08 then fades slowly
-            let alpha;
-            if (t < 0.08) {
-                alpha = t / 0.08;
-            } else {
-                alpha = 1 - ((t - 0.08) / 0.92);
-            }
-            alpha = Math.max(0, Math.pow(alpha, 1.4));
-
-            const h = sprayHues[i % sprayHues.length];
-            pa.color.array[i3]     = h[0] * alpha;
-            pa.color.array[i3 + 1] = h[1] * alpha;
-            pa.color.array[i3 + 2] = h[2] * alpha;
-
-            // Size — blooms as particle expands in air
-            pa.size.array[i] = pSz[i] * (1 + t * 4.5) * alpha;
-
-            life[i]++;
-            if (life[i] >= maxL[i]) {
-                life[i] = -1;
-                // park off-screen
-                pa.position.array[i3]     = 9999;
-                pa.position.array[i3 + 1] = 9999;
-                pa.position.array[i3 + 2] = 9999;
-            }
-        }
-
-        pa.position.needsUpdate = true;
-        pa.color.needsUpdate    = true;
-        pa.size.needsUpdate     = true;
-
-        // Gentle camera breathe
-        camera.position.y = Math.sin(frame * 0.008) * 0.4;
-
-        renderer.render(scene, camera);
-        requestAnimationFrame(tick);
-    }
-
-    tick();
-
-    // ── Resize ────────────────────────────────────────────────
-    window.addEventListener('resize', () => {
-        camera.aspect = innerWidth / innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(innerWidth, innerHeight);
-    });
-
     // ═══════════════════════════════════════════════════════════
     //  SCROLL REVEAL
     // ═══════════════════════════════════════════════════════════
