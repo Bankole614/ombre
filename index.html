@@ -40,6 +40,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Cormorant+SC:wght@300;400;600&family=Jost:wght@100;200;300;400&display=swap" rel="stylesheet">
 
+    <!-- Three.js -->
+    <script src="https://unpkg.com/three@0.159.0/build/three.min.js"></script>
+
     <!-- Vanilla CSS — only for things Tailwind cannot do -->
     <style>
         /* ── RESET & BASE ─────────────────────────────── */
@@ -72,6 +75,14 @@
             50%  { background-position: -30px 50px; }
             75%  { background-position: 60px 30px; }
             100% { background-position: 0 0; }
+        }
+
+        /* ── GALAXY CANVAS ─────────────────────────────── */
+        #galaxy-canvas {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
         }
 
         /* ── HERO ENTRY ANIMATIONS ────────────────────── */
@@ -265,6 +276,8 @@
     </style>
 </head>
 <body>
+
+    <canvas id="galaxy-canvas"></canvas>
 
     <!-- ── NAV — sits above everything at z-[200] ── -->
     <nav id="main-nav" class="fixed top-0 left-0 right-0 flex justify-between items-center px-16 py-6 transition-all duration-500 max-md:px-6"
@@ -638,6 +651,80 @@
     </div><!-- /.site -->
 
     <script>
+    // ── GALAXY DOTS ─────────────────────────────────────────
+    const galaxyCanvas = document.getElementById('galaxy-canvas');
+    const galaxyScene = new THREE.Scene();
+    const galaxyCamera = new THREE.PerspectiveCamera(
+        55,
+        innerWidth / innerHeight,
+        0.1,
+        300
+    );
+    galaxyCamera.position.set(0, 0, 60);
+
+    const galaxyRenderer = new THREE.WebGLRenderer({
+        canvas: galaxyCanvas,
+        alpha: true,
+        antialias: true
+    });
+    galaxyRenderer.setSize(innerWidth, innerHeight);
+    galaxyRenderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+
+    const starCount = 220;
+    const starPositions = new Float32Array(starCount * 3);
+    const starColors = new Float32Array(starCount * 3);
+
+    for (let i = 0; i < starCount; i++) {
+        const i3 = i * 3;
+        starPositions[i3] = (Math.random() - 0.5) * 160;
+        starPositions[i3 + 1] = (Math.random() - 0.5) * 100;
+        starPositions[i3 + 2] = (Math.random() - 0.5) * 20 - 10;
+
+        const brightness = 0.03 + Math.random() * 0.07;
+        starColors[i3] = brightness * 0.9;
+        starColors[i3 + 1] = brightness * 0.85;
+        starColors[i3 + 2] = brightness * 0.7;
+    }
+
+    const starGeometry = new THREE.BufferGeometry();
+    starGeometry.setAttribute(
+        'position',
+        new THREE.BufferAttribute(starPositions, 3)
+    );
+    starGeometry.setAttribute(
+        'color',
+        new THREE.BufferAttribute(starColors, 3)
+    );
+
+    const starMaterial = new THREE.PointsMaterial({
+        size: 0.35,
+        vertexColors: true,
+        transparent: true,
+        opacity: 1,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        sizeAttenuation: true
+    });
+
+    const galaxyStars = new THREE.Points(starGeometry, starMaterial);
+    galaxyScene.add(galaxyStars);
+
+    let galaxyFrame = 0;
+    function animateGalaxy() {
+        galaxyFrame++;
+        galaxyStars.rotation.z = Math.sin(galaxyFrame * 0.001) * 0.002;
+        galaxyCamera.position.y = Math.sin(galaxyFrame * 0.008) * 0.4;
+        galaxyRenderer.render(galaxyScene, galaxyCamera);
+        requestAnimationFrame(animateGalaxy);
+    }
+    animateGalaxy();
+
+    window.addEventListener('resize', () => {
+        galaxyCamera.aspect = innerWidth / innerHeight;
+        galaxyCamera.updateProjectionMatrix();
+        galaxyRenderer.setSize(innerWidth, innerHeight);
+    });
+
     // ═══════════════════════════════════════════════════════════
     //  SCROLL REVEAL
     // ═══════════════════════════════════════════════════════════
